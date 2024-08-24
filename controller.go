@@ -30,6 +30,8 @@ type ControllerState struct {
 	ControlErrorDerivative float64
 	// ControlSignal is the current control signal output of the controller.
 	ControlSignal float64
+	// LastUpdateTime is the time of the last update.
+	LastUpdateTime time.Time
 }
 
 // ControllerInput holds the input parameters to a Controller.
@@ -38,16 +40,15 @@ type ControllerInput struct {
 	ReferenceSignal float64
 	// ActualSignal is the actual value of the signal to control.
 	ActualSignal float64
-	// SamplingInterval is the time interval elapsed since the previous call of the controller Update method.
-	SamplingInterval time.Duration
 }
 
 // Update the controller state.
 func (c *Controller) Update(input ControllerInput) {
+	samplingInterval := time.Since(c.State.LastUpdateTime)
 	previousError := c.State.ControlError
 	c.State.ControlError = input.ReferenceSignal - input.ActualSignal
-	c.State.ControlErrorDerivative = (c.State.ControlError - previousError) / input.SamplingInterval.Seconds()
-	c.State.ControlErrorIntegral += c.State.ControlError * input.SamplingInterval.Seconds()
+	c.State.ControlErrorDerivative = (c.State.ControlError - previousError) / samplingInterval.Seconds()
+	c.State.ControlErrorIntegral += c.State.ControlError * samplingInterval.Seconds()
 	c.State.ControlSignal = c.Config.ProportionalGain*c.State.ControlError +
 		c.Config.IntegralGain*c.State.ControlErrorIntegral +
 		c.Config.DerivativeGain*c.State.ControlErrorDerivative

@@ -2,7 +2,6 @@ package pid_test
 
 import (
 	"fmt"
-	"time"
 
 	"go.einride.tech/pid"
 )
@@ -18,9 +17,8 @@ func ExampleController() {
 	}
 	// Update the PID controller.
 	c.Update(pid.ControllerInput{
-		ReferenceSignal:  10,
-		ActualSignal:     0,
-		SamplingInterval: 100 * time.Millisecond,
+		ReferenceSignal: 10,
+		ActualSignal:    0,
 	})
 	fmt.Printf("%+v\n", c.State)
 	// Reset the PID controller.
