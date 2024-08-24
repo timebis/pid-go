@@ -156,3 +156,37 @@ func TestSimpleController_Reset(t *testing.T) {
 	// Then
 	assert.Equal(t, expectedController.State, c.State)
 }
+
+func TestNaNInput(t *testing.T) {
+
+	// Given a pidControl with reference value and update interval, dt
+	pidControl := Controller{
+		Config: ControllerConfig{
+			ProportionalGain: 2.0,
+			IntegralGain:     1.0,
+			DerivativeGain:   1.0,
+		},
+		State: ControllerState{
+			ControlError:  11,
+			ControlSignal: 122,
+		},
+	}
+
+	var z float64
+	// Check output value when output value decrease is needed
+	pidControl.Update(ControllerInput{
+		ReferenceSignal: 1 / z,
+		ActualSignal:    2,
+	})
+
+	assert.Equal(t, float64(122), pidControl.State.ControlSignal)
+	assert.Equal(t, float64(11), pidControl.State.ControlError)
+
+	pidControl.Update(ControllerInput{
+		ReferenceSignal: 3,
+		ActualSignal:    z / z,
+	})
+	assert.Equal(t, float64(122), pidControl.State.ControlSignal)
+	assert.Equal(t, float64(11), pidControl.State.ControlError)
+
+}
