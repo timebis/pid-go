@@ -1,6 +1,9 @@
 package pid
 
-import "time"
+import (
+	"math"
+	"time"
+)
 
 // Controller implements a basic PID controller.
 type Controller struct {
@@ -18,6 +21,10 @@ type ControllerConfig struct {
 	IntegralGain float64
 	// DerivativeGain decreases the sensitivity to large reference changes.
 	DerivativeGain float64
+	// MaxOutput is the max output from the PID.
+	MaxOutput float64
+	// MinOutput is the min output from the PID.
+	MinOutput float64
 }
 
 // ControllerState holds mutable state for a Controller.
@@ -38,6 +45,8 @@ type ControllerInput struct {
 	ReferenceSignal float64
 	// ActualSignal is the actual value of the signal to control.
 	ActualSignal float64
+	// FeedForwardSignal is the contribution of the feed-forward control loop in the controller output.
+	FeedForwardSignal float64
 	// SamplingInterval is the time interval elapsed since the previous call of the controller Update method.
 	SamplingInterval time.Duration
 }
@@ -50,7 +59,12 @@ func (c *Controller) Update(input ControllerInput) {
 	c.State.ControlErrorIntegral += c.State.ControlError * input.SamplingInterval.Seconds()
 	c.State.ControlSignal = c.Config.ProportionalGain*c.State.ControlError +
 		c.Config.IntegralGain*c.State.ControlErrorIntegral +
-		c.Config.DerivativeGain*c.State.ControlErrorDerivative
+		c.Config.DerivativeGain*c.State.ControlErrorDerivative +
+		input.FeedForwardSignal
+
+	// Saturate the control signal.
+	c.State.ControlSignal = math.Max(c.Config.MinOutput, math.Min(c.Config.MaxOutput, c.State.ControlSignal))
+
 }
 
 // Reset the controller state.
