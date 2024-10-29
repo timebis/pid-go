@@ -51,12 +51,30 @@ type ControllerInput struct {
 	SamplingInterval time.Duration
 }
 
+type PidOptionalInputs struct {
+	DisableIntegralUpdate   bool
+	DisableDerivativeUpdate bool
+}
+
+
 // Update the controller state.
-func (c *Controller) Update(input ControllerInput) {
+func (c *Controller) Update(input ControllerInput, opts ...PidOptionalInputs) {
+
+	var optsInputs PidOptionalInputs
+	if len(opts) > 0 {
+		optsInputs = opts[0]
+	}
+
 	previousError := c.State.ControlError
 	c.State.ControlError = input.ReferenceSignal - input.ActualSignal
-	c.State.ControlErrorDerivative = (c.State.ControlError - previousError) / input.SamplingInterval.Seconds()
-	c.State.ControlErrorIntegral += c.State.ControlError * input.SamplingInterval.Seconds()
+	if !optsInputs.DisableDerivativeUpdate {
+		c.State.ControlErrorDerivative = (c.State.ControlError - previousError) / input.SamplingInterval.Seconds()
+	} else {
+		c.State.ControlErrorDerivative = 0
+	}
+	if !optsInputs.DisableIntegralUpdate {
+		c.State.ControlErrorIntegral += c.State.ControlError * input.SamplingInterval.Seconds()
+	}
 	c.State.ControlSignal = c.Config.ProportionalGain*c.State.ControlError +
 		c.Config.IntegralGain*c.State.ControlErrorIntegral +
 		c.Config.DerivativeGain*c.State.ControlErrorDerivative +
