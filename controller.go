@@ -56,7 +56,6 @@ type PidOptionalInputs struct {
 	DisableDerivativeUpdate bool
 }
 
-
 // Update the controller state.
 func (c *Controller) Update(input ControllerInput, opts ...PidOptionalInputs) {
 

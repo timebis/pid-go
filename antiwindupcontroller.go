@@ -74,20 +74,35 @@ func (c *AntiWindupController) Reset() {
 	c.State = AntiWindupControllerState{}
 }
 
+// antiOverFlow clamps the value to the range [-math.MaxFloat64, math.MaxFloat64].
+func aof(value float64) float64 {
+	return math.Max(-math.MaxFloat64, math.Min(math.MaxFloat64, value))
+}
+
 // Update the controller state.
-func (c *AntiWindupController) Update(input AntiWindupControllerInput) {
+func (c *AntiWindupController) Update(input AntiWindupControllerInput, opts ...PidOptionalInputs) {
+	var optsInputs PidOptionalInputs
+	if len(opts) > 0 {
+		optsInputs = opts[0]
+	}
+
 	e := input.ReferenceSignal - input.ActualSignal
 	controlErrorIntegral := c.State.ControlErrorIntegrand*input.SamplingInterval.Seconds() + c.State.ControlErrorIntegral
-	controlErrorDerivative := ((1/c.Config.LowPassTimeConstant.Seconds())*(e-c.State.ControlError) +
-		c.State.ControlErrorDerivative) / (input.SamplingInterval.Seconds()/c.Config.LowPassTimeConstant.Seconds() + 1)
+	var controlErrorDerivative float64
+	if !optsInputs.DisableDerivativeUpdate {
+		controlErrorDerivative = ((1/c.Config.LowPassTimeConstant.Seconds())*(e-c.State.ControlError) +
+			c.State.ControlErrorDerivative) / (input.SamplingInterval.Seconds()/c.Config.LowPassTimeConstant.Seconds() + 1)
+	}
 	c.State.UnsaturatedControlSignal = e*c.Config.ProportionalGain + c.Config.IntegralGain*controlErrorIntegral +
 		c.Config.DerivativeGain*controlErrorDerivative + input.FeedForwardSignal
 	c.State.ControlSignal = math.Max(c.Config.MinOutput, math.Min(c.Config.MaxOutput, c.State.UnsaturatedControlSignal))
-	c.State.ControlErrorIntegrand = e + c.Config.AntiWindUpGain*(c.State.ControlSignal-c.State.UnsaturatedControlSignal)
-	c.State.ControlErrorIntegrand = math.Max(-math.MaxFloat64, math.Min(math.MaxFloat64, c.State.ControlErrorIntegrand))
-	c.State.ControlErrorIntegral = math.Max(-math.MaxFloat64, math.Min(math.MaxFloat64, controlErrorIntegral))
-	c.State.ControlErrorDerivative = math.Max(-math.MaxFloat64, math.Min(math.MaxFloat64, controlErrorDerivative))
-	c.State.ControlError = math.Max(-math.MaxFloat64, math.Min(math.MaxFloat64, e))
+	if !optsInputs.DisableIntegralUpdate {
+		c.State.ControlErrorIntegrand = e + c.Config.AntiWindUpGain*(c.State.ControlSignal-c.State.UnsaturatedControlSignal)
+	}
+	c.State.ControlErrorIntegrand = aof(c.State.ControlErrorIntegrand)
+	c.State.ControlErrorIntegral = aof(controlErrorIntegral)
+	c.State.ControlErrorDerivative = aof(controlErrorDerivative)
+	c.State.ControlError = aof(e)
 }
 
 // DischargeIntegral provides the ability to discharge the controller integral state
