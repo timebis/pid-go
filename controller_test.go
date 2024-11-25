@@ -14,6 +14,8 @@ func TestSpeedControl_ControlLoop_OutputIncrease(t *testing.T) {
 			ProportionalGain: 2.0,
 			IntegralGain:     1.0,
 			DerivativeGain:   1.0,
+			MinOutput:        -100,
+			MaxOutput:        200,
 		},
 	}
 	// Check output value when output increase is needed
@@ -33,6 +35,8 @@ func TestSpeedControl_ControlLoop_OutputDecrease(t *testing.T) {
 			ProportionalGain: 2.0,
 			IntegralGain:     1.0,
 			DerivativeGain:   1.0,
+			MinOutput:        -100,
+			MaxOutput:        200,
 		},
 	}
 	// Check output value when output value decrease is needed
@@ -52,6 +56,8 @@ func TestSimpleController_Reset(t *testing.T) {
 			ProportionalGain: 2.0,
 			IntegralGain:     1.0,
 			DerivativeGain:   1.0,
+			MinOutput:        -100,
+			MaxOutput:        200,
 		},
 		State: ControllerState{
 			ControlErrorIntegral:   10,
@@ -65,6 +71,8 @@ func TestSimpleController_Reset(t *testing.T) {
 			ProportionalGain: 2.0,
 			IntegralGain:     1.0,
 			DerivativeGain:   1.0,
+			MinOutput:        -100,
+			MaxOutput:        200,
 		},
 	}
 	// When resetting stored values

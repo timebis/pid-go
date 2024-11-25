@@ -14,6 +14,8 @@ func ExampleController() {
 			ProportionalGain: 2.0,
 			IntegralGain:     1.0,
 			DerivativeGain:   1.0,
+			MaxOutput:        200,
+			MinOutput:        -200,
 		},
 	}
 	// Update the PID controller.
